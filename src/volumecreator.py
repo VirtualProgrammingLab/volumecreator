@@ -1,14 +1,19 @@
 import os
-from flask import Flask, flash, request, redirect, url_for
+from flask import Flask, flash, request, redirect
+
 from flask import send_from_directory
 from werkzeug.utils import secure_filename
+
 import glob
-from flask.json import jsonify
+from flask import jsonify
 from flask.helpers import make_response
-UPLOAD_FOLDER = '/tmp/volumecreatoruploads'
+
+
+UPLOAD_FOLDER = '/tmp/shared'
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SECRET_KEY'] = 'o5sGDoMC6LS2L0XIVBwprbgPADbxb3SJCaGLnzxVbCXr14JiWRGJFvAYq7eJoAA8'
 
 def jsonify_no_content():
     response = make_response('', 204)
@@ -43,11 +48,10 @@ def upload_file():
     </form>
     '''
 
-@app.route('/list', methods=['GET'])
-def listresources():
-    return jsonify(
-        files=[file[len(UPLOAD_FOLDER):] for file in glob.glob('%s/*'%UPLOAD_FOLDER)]
-        )
+@app.route('/list')
+def list_files():
+    files = [file[len(app.config["UPLOAD_FOLDER"]):] for file in glob.glob("%s/*"%app.config["UPLOAD_FOLDER"] )]
+    return jsonify(files)
 
 @app.route('/data/<name>')
 def download_file(name):
