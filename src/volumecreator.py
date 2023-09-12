@@ -27,14 +27,11 @@ regex = re.compile(
                 r'(?::\d+)?' # optional port
                 r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-def sha256sum(filename):
-    h  = hashlib.sha256()
-    b  = bytearray(128*1024)
-    mv = memoryview(b)
-    with open(filename, 'rb', buffering=0) as f:
-        while n := f.readinto(mv):
-            h.update(mv[:n])
-    return h.hexdigest()
+def create_fileinfo(file_path):
+    name = file_path[len(app.config["UPLOAD_FOLDER"]):]
+    size = os.path.getsize(file_path)
+    mimetype = get_mimetype(file_path)
+    return {"name": name, "size": size, "mimetype" : mimetype}
 
 def add_mimetypes():
     mimetypes.init()
@@ -62,11 +59,13 @@ def get_mimetype(file_path):
     return mimetype
 
 
+
 # init mimetypes and add missing types
 add_mimetypes()
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# TODO: Check if necessary, only needed for sessions?
 app.config['SECRET_KEY'] = 'o5sGDoMC6LS2L0XIVBwprbgPADbxb3SJCaGLnzxVbCXr14JiWRGJFvAYq7eJoAA8'
 
 @app.route('/', methods=['GET', 'POST'])
@@ -99,12 +98,15 @@ def upload_file():
 @app.route('/list')
 def list_files():
     files = []
-    for file in glob.glob("%s/*"%app.config["UPLOAD_FOLDER"]) :
-        name = file[len(app.config["UPLOAD_FOLDER"]):]
-        size = os.path.getsize(file)
-        mimetype = get_mimetype(file)
-        files.append({"name": name, "size": size, "mimetype" : mimetype})
+    for file_path in glob.glob("%s/*" % app.config["UPLOAD_FOLDER"]) :
+        files.append(create_fileinfo(file_path))
     return jsonify(files)
+
+@app.route('/list/<name>')
+def list_file(name):
+    file_path = os.path.join(app.config["UPLOAD_FOLDER"], name)
+    result = create_fileinfo(file_path)
+    return jsonify(result)
 
 @app.route('/data/<name>')
 def download_file(name):
