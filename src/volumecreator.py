@@ -16,7 +16,7 @@ UPLOAD_FOLDER = '/tmp/shared'
 
 def jsonify_no_content():
     response = make_response('', 204)
-    response.mimetype = app.config['JSONIFY_MIMETYPE']
+    response.mimetype = "application/json"
     return response
 
 regex = re.compile(
